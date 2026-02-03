@@ -220,6 +220,13 @@ app.put('/loans/:id', asyncHandler(async (req, res) => {
     res.json({ message: 'Loan updated' });
 }));
 
+// Update Loan Status (Preclose)
+app.patch('/loans/:id/status', asyncHandler(async (req, res) => {
+    const { status } = req.body; // 'Active' or 'Closed'
+    await pool.query('UPDATE loans SET status = $1 WHERE id = $2', [status, req.params.id]);
+    res.json({ message: `Loan marked as ${status}` });
+}));
+
 // Add Income
 app.post('/incomes', asyncHandler(async (req, res) => {
     const { userName, amount, source, description, date } = req.body;
@@ -307,7 +314,7 @@ app.get('/analysis/:userName', asyncHandler(async (req, res) => {
     responseData.financials.totalSpent = totalExpenses;
 
     // 3. Loans
-    const loanRes = await pool.query('SELECT * FROM loans WHERE user_id = $1', [userId]);
+    const loanRes = await pool.query("SELECT * FROM loans WHERE user_id = $1 AND status = 'Active'", [userId]);
     const loanRows = loanRes.rows;
     let totalEmi = 0;
 

@@ -391,6 +391,23 @@ function cancelEdit(type) {
     if (type === 'income') resetIncomeForm();
 }
 
+// Preclose Loan
+function precloseLoan(id, name) {
+    if (!confirm(`Are you sure you want to PRECLOSE the loan for ${name}?\nThis will mark it as paid and remove it from your active list.`)) return;
+
+    fetch(`/loans/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Closed' })
+    })
+        .then(res => res.json())
+        .then(data => {
+            showToast(data.message);
+            fetchLoanPortfolio(); // Refresh list
+        })
+        .catch(err => showToast("Error updating loan status"));
+}
+
 // Fetch Overview Data (Financials + Recent Expenses)
 async function fetchOverview() {
     if (!userName) return;
@@ -479,6 +496,7 @@ async function fetchLoanPortfolio() {
                             <div class="action-buttons">
                                 <button class="action-btn edit" onclick="editLoan(${loan.id}, '${loan.name}', ${loan.totalAmount}, ${loan.interest}, ${loan.tenure}, '${loan.startDate}')"><i class="fas fa-edit"></i></button>
                                 <button class="action-btn delete" onclick="deleteLoan(${loan.id})"><i class="fas fa-trash"></i></button>
+                                <button class="action-btn" onclick="precloseLoan(${loan.id}, '${loan.name}')" title="Preclose Loan" style="color: #27ae60;"><i class="fas fa-check-circle"></i></button>
                             </div>
                         </div>
                         <div style="text-align: right; font-size: 12px; color: #ccc; margin-bottom: 5px;">${loan.completion}% Paid</div>
