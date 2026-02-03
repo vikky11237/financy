@@ -242,7 +242,8 @@ span {
 
 /* simpler approach for icon coloring if needed, but text-muted is fine */
 
-input {
+input,
+select {
     background-color: rgba(255, 255, 255, 0.07);
     border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 12px 15px 12px 45px;
