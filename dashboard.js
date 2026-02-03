@@ -255,6 +255,66 @@ function resetExpenseForm() {
     document.getElementById('expense-cancel-btn').style.display = "none";
 }
 
+// Handle Expense CSV Upload
+function handleExpenseCSV(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function (e) {
+        const text = e.target.result;
+        const rows = text.split('\n');
+        const expenses = [];
+
+        // Assume simple CSV: Amount, Category, Description, Date (YYYY-MM-DD)
+        // Skip header if first row contains "Amount"
+        let startIndex = 0;
+        if (rows[0].toLowerCase().includes('amount')) startIndex = 1;
+
+        for (let i = startIndex; i < rows.length; i++) {
+            const cols = rows[i].split(',');
+            if (cols.length < 4) continue; // Skip invalid rows
+
+            const amount = parseFloat(cols[0].trim());
+            const category = cols[1].trim();
+            const description = cols[2].trim();
+            let date = cols[3].trim(); // Verify YYYY-MM-DD?
+
+            if (!amount || isNaN(amount)) continue;
+
+            expenses.push({ amount, category, description, date });
+        }
+
+        if (expenses.length === 0) {
+            showToast("No valid expenses found in CSV.");
+            return;
+        }
+
+        if (!confirm(`Found ${expenses.length} expenses. Upload now?`)) return;
+
+        try {
+            const response = await fetch('/expenses/batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userName: decodeURIComponent(userName), expenses })
+            });
+
+            const resData = await response.json();
+            if (response.ok) {
+                showToast(resData.message);
+                fetchExpenses(); // Refresh list
+                input.value = ''; // Reset input
+            } else {
+                showToast("Upload failed: " + resData.error);
+            }
+        } catch (err) {
+            console.error(err);
+            showToast("Error uploading expenses.");
+        }
+    };
+    reader.readAsText(file);
+}
+
 // Add/Update Loan
 document.getElementById('loanForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -395,8 +455,22 @@ async function fetchLoanPortfolio() {
             // Render Loan List
             const list = document.getElementById('loan-list');
             list.innerHTML = "";
-            if (data.loans && data.loans.length > 0) {
-                data.loans.forEach(loan => {
+            let loans = data.loans || [];
+
+            // Sorting Logic
+            const sortValue = document.getElementById('loan-sort')?.value || 'default';
+            if (sortValue === 'tenure-asc') {
+                loans.sort((a, b) => (a.tenure - a.monthsPaid) - (b.tenure - b.monthsPaid)); // Remaining Tenure Low to High
+            } else if (sortValue === 'tenure-desc') {
+                loans.sort((a, b) => (b.tenure - b.monthsPaid) - (a.tenure - a.monthsPaid)); // Remaining Tenure High to Low
+            } else if (sortValue === 'amount-desc') {
+                loans.sort((a, b) => parseFloat(b.principalRemaining) - parseFloat(a.principalRemaining));
+            } else if (sortValue === 'amount-asc') {
+                loans.sort((a, b) => parseFloat(a.principalRemaining) - parseFloat(b.principalRemaining));
+            }
+
+            if (loans.length > 0) {
+                loans.forEach(loan => {
                     const div = document.createElement('div');
                     div.className = 'loan-detail-card';
                     div.innerHTML = `

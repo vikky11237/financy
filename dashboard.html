@@ -77,7 +77,19 @@
 
             <!-- Loan Analysis Tab -->
             <div id="loan-analysis" class="tab-pane">
-                <h2>Loan Portfolio</h2>
+                <div class="section-header">
+                    <h2>Loan Portfolio</h2>
+                    <div class="sort-controls">
+                        <label for="loan-sort">Sort by:</label>
+                        <select id="loan-sort" onchange="fetchLoanPortfolio()">
+                            <option value="default">Default</option>
+                            <option value="tenure-asc">Tenure (Low to High)</option>
+                            <option value="tenure-desc">Tenure (High to Low)</option>
+                            <option value="amount-desc">Principal (High to Low)</option>
+                            <option value="amount-asc">Principal (Low to High)</option>
+                        </select>
+                    </div>
+                </div>
 
                 <!-- Loan Stats -->
                 <div class="cards-container">
@@ -138,7 +150,15 @@
 
             <!-- Add Expenses Tab -->
             <div id="expenses" class="tab-pane">
-                <h2>Add New Expense</h2>
+                <div class="section-header">
+                    <h2>Track New Expense</h2>
+                    <button class="btn-ghost small" onclick="document.getElementById('expense-csv').click()"
+                        title="CSV Format: Amount,Category,Description,Date (YYYY-MM-DD)">
+                        <i class="fas fa-file-upload"></i> Import CSV
+                    </button>
+                    <input type="file" id="expense-csv" accept=".csv" style="display: none;"
+                        onchange="handleExpenseCSV(this)">
+                </div>
                 <form id="expenseForm">
                     <div class="input-group">
                         <i class="fas fa-rupee-sign"></i>

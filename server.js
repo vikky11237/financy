@@ -138,6 +138,33 @@ app.post('/expenses', asyncHandler(async (req, res) => {
     res.json({ message: 'Expense added', id: result.rows[0].id });
 }));
 
+// Batch Add Expenses (CSV Import)
+app.post('/expenses/batch', asyncHandler(async (req, res) => {
+    const { userName, expenses } = req.body; // expenses is array of {amount, category, description, date}
+    const userId = await getUserIdByName(userName);
+    if (!userId) return res.status(404).json({ error: 'User not found' });
+
+    if (!expenses || !Array.isArray(expenses) || expenses.length === 0) {
+        return res.status(400).json({ error: 'No expenses provided' });
+    }
+
+    try {
+        await pool.query('BEGIN');
+        for (const exp of expenses) {
+            await pool.query(
+                `INSERT INTO expenses (user_id, amount, category, description, date) VALUES ($1, $2, $3, $4, $5)`,
+                [userId, exp.amount, exp.category, exp.description, exp.date]
+            );
+        }
+        await pool.query('COMMIT');
+        res.json({ message: `Successfully imported ${expenses.length} expenses` });
+    } catch (err) {
+        await pool.query('ROLLBACK');
+        console.error('Batch import error:', err);
+        res.status(500).json({ error: 'Failed to import expenses' });
+    }
+}));
+
 // Get Expenses
 app.get('/expenses/:userName', asyncHandler(async (req, res) => {
     const userId = await getUserIdByName(req.params.userName);
