@@ -287,6 +287,12 @@ app.get('/analysis/:userName', asyncHandler(async (req, res) => {
     res.json(responseData);
 }));
 
+// Global Error Handler
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

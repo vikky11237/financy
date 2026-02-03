@@ -31,12 +31,20 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ name, email, password })
 		});
-		const data = await response.json();
-		if (response.ok) {
-			showToast('Signup Successful! Please Sign In.');
-			signInButton.click(); // Switch to sign in view
+
+		const contentType = response.headers.get("content-type");
+		if (contentType && contentType.indexOf("application/json") !== -1) {
+			const data = await response.json();
+			if (response.ok) {
+				showToast('Signup Successful! Please Sign In.');
+				signInButton.click();
+			} else {
+				showToast(data.error || 'Signup failed');
+			}
 		} else {
-			showToast(data.error);
+			const text = await response.text();
+			console.error('Non-JSON response:', text);
+			showToast('Server error. Check console/logs.');
 		}
 	} catch (error) {
 		console.error('Error:', error);
