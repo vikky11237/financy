@@ -48,8 +48,10 @@ function openTab(tabName) {
         }
     });
 
-    if (tabName === 'analysis') {
-        fetchAnalysis();
+    if (tabName === 'overview') {
+        fetchOverview();
+    } else if (tabName === 'loan-analysis') {
+        fetchLoanPortfolio();
     } else if (tabName === 'expenses') {
         fetchExpenses();
     } else if (tabName === 'incomes') {
@@ -309,7 +311,7 @@ function deleteLoan(id) {
         .then(res => {
             if (res.ok) {
                 showToast("Loan deleted");
-                fetchAnalysis();
+                fetchLoanPortfolio();
             }
         });
 }
@@ -329,26 +331,68 @@ function cancelEdit(type) {
     if (type === 'income') resetIncomeForm();
 }
 
-// Fetch Analysis (Complex)
-async function fetchAnalysis() {
+// Fetch Overview Data (Financials + Recent Expenses)
+async function fetchOverview() {
+    if (!userName) return;
+    try {
+        // 1. Fetch Financial Stats
+        const response = await fetch(`/analysis/${encodeURIComponent(userName)}`);
+        const data = await response.json();
+        if (response.ok) {
+            const fin = data.financials || {};
+            document.getElementById('b-income').textContent = `₹${fin.income || 0}`;
+            document.getElementById('b-limit').textContent = `₹${fin.budgetLimit || 0}`;
+            document.getElementById('total-expenses').textContent = `₹${fin.totalSpent?.toFixed(2) || 0}`;
+            document.getElementById('b-spendable').textContent = `₹${(fin.spendableIncome || 0).toFixed(2)}`;
+        }
+
+        // 2. Fetch Recent Expenses (Top 5)
+        const expResponse = await fetch(`/expenses/${encodeURIComponent(userName)}`);
+        const expenses = await expResponse.json();
+        const list = document.getElementById('overview-expenses-list');
+        list.innerHTML = "";
+
+        if (expenses.length > 0) {
+            expenses.slice(0, 5).forEach(exp => {
+                const div = document.createElement('div');
+                div.className = 'expense-item';
+                div.innerHTML = `
+                    <div class="item-info">
+                        <h4>${exp.category}</h4>
+                        <span style="font-size: 0.8em; color: #888;">${exp.date}</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="item-amount">₹${exp.amount}</div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        } else {
+            list.innerHTML = "<p style='text-align:center; padding: 20px; color:#666;'>No recent expenses.</p>";
+        }
+
+    } catch (error) { console.log(error); }
+}
+
+// Fetch Loan Portfolio
+async function fetchLoanPortfolio() {
     if (!userName) return;
     try {
         const response = await fetch(`/analysis/${encodeURIComponent(userName)}`);
         const data = await response.json();
         if (response.ok) {
-            // Update Summary Cards
-            document.getElementById('total-expenses').textContent = `₹${data.financials?.totalSpent?.toFixed(2) || 0}`;
+            // Update Stats
             document.getElementById('active-loans-count').textContent = data.activeLoans || 0;
             document.getElementById('total-emi').textContent = `₹${data.totalMonthlyEmi || 0}`;
 
-            // Update Budget Cards
-            const fin = data.financials || {};
-            document.getElementById('b-income').textContent = `₹${fin.income || 0}`;
-            document.getElementById('b-limit').textContent = `₹${fin.budgetLimit || 0}`;
-            document.getElementById('b-remaining').textContent = `₹${(fin.remainingBudget || 0).toFixed(2)}`;
-            document.getElementById('b-spendable').textContent = `₹${(fin.spendableIncome || 0).toFixed(2)}`;
+            // Calculate Total Debt
+            let totalDebt = 0;
+            if (data.loans) {
+                totalDebt = data.loans.reduce((sum, loan) => sum + parseFloat(loan.principalRemaining), 0);
+            }
+            document.getElementById('total-debt').textContent = `₹${totalDebt.toFixed(2)}`;
 
-            // Render Loan Portfolio
+            // Render Loan List
             const list = document.getElementById('loan-list');
             list.innerHTML = "";
             if (data.loans && data.loans.length > 0) {
@@ -402,11 +446,11 @@ function toggleBudgetModal() {
 
 async function saveBudget() {
     if (!userName) return;
-    const income = parseFloat(document.getElementById('set-income').value);
+    // const income = parseFloat(document.getElementById('set-income').value);
     const budget = parseFloat(document.getElementById('set-limit').value);
     const month = new Date().toISOString().slice(0, 7); // Current YYYY-MM
 
-    if (isNaN(income) || isNaN(budget)) {
+    if (isNaN(budget)) { // Removed income check
         showToast("Please enter valid numbers");
         return;
     }
@@ -421,7 +465,7 @@ async function saveBudget() {
         if (response.ok) {
             showToast("Budget updated successfully!");
             toggleBudgetModal();
-            fetchAnalysis(); // Refresh UI
+            fetchOverview(); // Refresh UI
         } else {
             showToast("Failed to update budget");
         }
@@ -432,4 +476,4 @@ async function saveBudget() {
 
 // Init
 document.getElementById('expense-date').valueAsDate = new Date();
-openTab('analysis'); // Default
+openTab('overview'); // Default

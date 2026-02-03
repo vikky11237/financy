@@ -31,7 +31,8 @@
 
         <!-- Navigation Tabs -->
         <div class="tabs">
-            <button class="tab-btn active" onclick="openTab('analysis')">Analysis</button>
+            <button class="tab-btn active" onclick="openTab('overview')">Overview</button>
+            <button class="tab-btn" onclick="openTab('loan-analysis')">Loan Portfolio</button>
             <button class="tab-btn" onclick="openTab('incomes')">Add Income</button>
             <button class="tab-btn" onclick="openTab('expenses')">Add Expenses</button>
             <button class="tab-btn" onclick="openTab('loans')">Add Loan</button>
@@ -40,14 +41,14 @@
         <!-- Tab Content -->
         <div class="tab-content">
 
-            <!-- Analysis Tab -->
-            <div id="analysis" class="tab-pane active">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-pane active">
                 <div class="section-header">
-                    <h2>Financial Analysis</h2>
+                    <h2>Financial Overview</h2>
                     <button class="btn-ghost small" onclick="toggleBudgetModal()">Set Budget</button>
                 </div>
 
-                <!-- Budget Overview -->
+                <!-- Budget Cards -->
                 <div class="cards-container budget-cards">
                     <div class="card budget-card">
                         <h3>Monthly Income</h3>
@@ -58,8 +59,8 @@
                         <p id="b-limit">₹0</p>
                     </div>
                     <div class="card budget-card">
-                        <h3>Remaining Budget</h3>
-                        <p id="b-remaining">₹0</p>
+                        <h3>Total Expenses</h3>
+                        <p id="total-expenses">₹0</p>
                     </div>
                     <div class="card budget-card highlight">
                         <h3>Spendable (Income - EMI - Spent)</h3>
@@ -67,17 +68,19 @@
                     </div>
                 </div>
 
-                <h3>Loan Portfolio</h3>
-                <div id="loan-list" class="loan-list">
-                    <!-- JS will populate detailed loan cards here -->
+                <!-- Recent Expenses Summary -->
+                <h3>Recent Expenses</h3>
+                <div id="overview-expenses-list" class="expense-list" style="max-height: 300px; overflow-y: auto;">
+                    <!-- JS will populate top 5 expenses here -->
                 </div>
+            </div>
 
-                <h3>Summary</h3>
+            <!-- Loan Analysis Tab -->
+            <div id="loan-analysis" class="tab-pane">
+                <h2>Loan Portfolio</h2>
+
+                <!-- Loan Stats -->
                 <div class="cards-container">
-                    <div class="card">
-                        <h3>Total Expenses (Month)</h3>
-                        <p id="total-expenses">₹0</p>
-                    </div>
                     <div class="card">
                         <h3>Active Loans</h3>
                         <p id="active-loans-count">0</p>
@@ -86,6 +89,15 @@
                         <h3>Total Monthly EMI</h3>
                         <p id="total-emi">₹0</p>
                     </div>
+                    <div class="card">
+                        <h3>Total Debt Remaining</h3>
+                        <p id="total-debt">₹0</p>
+                    </div>
+                </div>
+
+                <h3>Your Loans</h3>
+                <div id="loan-list" class="loan-list">
+                    <!-- JS will populate detailed loan cards here -->
                 </div>
             </div>
 
