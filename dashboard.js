@@ -22,8 +22,10 @@ function logout() {
 }
 
 // State for editing
+
 let editingExpenseId = null;
 let editingLoanId = null;
+let editingIncomeId = null;
 
 // Tab Switching
 function openTab(tabName) {
@@ -50,7 +52,107 @@ function openTab(tabName) {
         fetchAnalysis();
     } else if (tabName === 'expenses') {
         fetchExpenses();
+    } else if (tabName === 'incomes') {
+        fetchIncomes();
     }
+}
+
+// Fetch Incomes List
+async function fetchIncomes() {
+    if (!userName) return;
+    try {
+        const response = await fetch(`/incomes/${encodeURIComponent(userName)}`);
+        const data = await response.json();
+        const list = document.getElementById('income-list');
+        list.innerHTML = "";
+
+        if (data.length > 0) {
+            data.forEach(inc => {
+                const div = document.createElement('div');
+                div.className = 'expense-item'; // Reuse expense item style
+                div.innerHTML = `
+                    <div class="item-info">
+                        <h4>${inc.source}</h4>
+                        <span>${inc.date}</span>
+                        <span>${inc.description}</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="item-amount" style="color: #2ecc71;">₹${inc.amount}</div>
+                        <div class="action-buttons">
+                            <button class="action-btn edit" onclick="editIncome(${inc.id}, '${inc.amount}', '${inc.source}', '${inc.description}', '${inc.date}')"><i class="fas fa-edit"></i></button>
+                            <button class="action-btn delete" onclick="deleteIncome(${inc.id})"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        } else {
+            list.innerHTML = "<p>No income recorded.</p>";
+        }
+    } catch (e) { console.log(e); }
+}
+
+// Add/Update Income
+document.getElementById('incomeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!userName) { showToast("User not found!"); return; }
+
+    const amount = document.getElementById('income-amount').value;
+    const source = document.getElementById('income-source').value;
+    const description = document.getElementById('income-desc').value;
+    const date = document.getElementById('income-date').value;
+
+    const url = editingIncomeId ? `/incomes/${editingIncomeId}` : '/incomes';
+    const method = editingIncomeId ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userName: decodeURIComponent(userName), amount, source, description, date })
+        });
+
+        if (response.ok) {
+            showToast(editingIncomeId ? 'Income Updated!' : 'Income Added!');
+            resetIncomeForm();
+            fetchIncomes();
+        } else {
+            showToast('Error saving income');
+        }
+    } catch (error) {
+        showToast('Error connecting to server');
+    }
+});
+
+function editIncome(id, amount, source, desc, date) {
+    editingIncomeId = id;
+    document.getElementById('income-amount').value = amount;
+    document.getElementById('income-source').value = source;
+    document.getElementById('income-desc').value = desc;
+    document.getElementById('income-date').value = date;
+
+    document.getElementById('income-submit-btn').textContent = "Update Income";
+    document.getElementById('income-cancel-btn').style.display = "inline-block";
+    window.scrollTo(0, 0);
+}
+
+function deleteIncome(id) {
+    if (!confirm("Are you sure you want to delete this income?")) return;
+    fetch(`/incomes/${id}`, { method: 'DELETE' })
+        .then(res => {
+            if (res.ok) {
+                showToast("Income deleted");
+                fetchIncomes();
+            }
+        });
+}
+
+function resetIncomeForm() {
+    document.getElementById('incomeForm').reset();
+    document.getElementById('income-date').valueAsDate = new Date();
+    editingIncomeId = null;
+    document.getElementById('income-submit-btn').textContent = "Add Income";
+    document.getElementById('income-cancel-btn').style.display = "none";
 }
 
 // Fetch Expenses List
@@ -222,7 +324,9 @@ function resetLoanForm() {
 
 function cancelEdit(type) {
     if (type === 'expense') resetExpenseForm();
+    if (type === 'expense') resetExpenseForm();
     if (type === 'loan') resetLoanForm();
+    if (type === 'income') resetIncomeForm();
 }
 
 // Fetch Analysis (Complex)
@@ -288,9 +392,8 @@ function toggleBudgetModal() {
     if (modal.classList.contains('hidden')) {
         modal.classList.remove('hidden');
         // Pre-fill if data exists
-        const incomeText = document.getElementById('b-income').textContent.replace('₹', '');
         const limitText = document.getElementById('b-limit').textContent.replace('₹', '');
-        document.getElementById('set-income').value = parseFloat(incomeText) || '';
+        // document.getElementById('set-income').value = parseFloat(incomeText) || ''; // Removed manual income
         document.getElementById('set-limit').value = parseFloat(limitText) || '';
     } else {
         modal.classList.add('hidden');
@@ -312,7 +415,7 @@ async function saveBudget() {
         const response = await fetch('/financials', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userName: decodeURIComponent(userName), income, budget, month })
+            body: JSON.stringify({ userName: decodeURIComponent(userName), income: 0, budget, month }) // Set income to 0 as it's calculated
         });
 
         if (response.ok) {

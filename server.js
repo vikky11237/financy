@@ -57,6 +57,15 @@ async function initDB() {
             income REAL,
             budget_limit REAL
         )`);
+
+        await pool.query(`CREATE TABLE IF NOT EXISTS incomes (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            amount REAL,
+            source TEXT,
+            description TEXT,
+            date TEXT
+        )`);
         console.log('Connected to the PostgreSQL database and tables verified.');
     } catch (err) {
         console.error('Error initializing database:', err);
@@ -184,6 +193,44 @@ app.put('/loans/:id', asyncHandler(async (req, res) => {
     res.json({ message: 'Loan updated' });
 }));
 
+// Add Income
+app.post('/incomes', asyncHandler(async (req, res) => {
+    const { userName, amount, source, description, date } = req.body;
+    const userId = await getUserIdByName(userName);
+    if (!userId) return res.status(404).json({ error: 'User not found' });
+
+    const result = await pool.query(
+        `INSERT INTO incomes (user_id, amount, source, description, date) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        [userId, amount, source, description, date]
+    );
+    res.json({ message: 'Income added', id: result.rows[0].id });
+}));
+
+// Get Incomes
+app.get('/incomes/:userName', asyncHandler(async (req, res) => {
+    const userId = await getUserIdByName(req.params.userName);
+    if (!userId) return res.status(404).json({ error: 'User not found' });
+
+    const result = await pool.query('SELECT * FROM incomes WHERE user_id = $1 ORDER BY date DESC', [userId]);
+    res.json(result.rows);
+}));
+
+// Delete Income
+app.delete('/incomes/:id', asyncHandler(async (req, res) => {
+    await pool.query('DELETE FROM incomes WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Income deleted' });
+}));
+
+// Update Income
+app.put('/incomes/:id', asyncHandler(async (req, res) => {
+    const { amount, source, description, date } = req.body;
+    await pool.query(
+        'UPDATE incomes SET amount = $1, source = $2, description = $3, date = $4 WHERE id = $5',
+        [amount, source, description, date, req.params.id]
+    );
+    res.json({ message: 'Income updated' });
+}));
+
 // Financials
 app.post('/financials', asyncHandler(async (req, res) => {
     const { userName, income, budget, month } = req.body;
@@ -219,9 +266,13 @@ app.get('/analysis/:userName', asyncHandler(async (req, res) => {
     // 1. Financials
     const finRes = await pool.query('SELECT * FROM financials WHERE user_id = $1 AND month = $2', [userId, currentMonth]);
     if (finRes.rows[0]) {
-        responseData.financials.income = finRes.rows[0].income;
+        // responseData.financials.income = finRes.rows[0].income; // Deprecated: Use calculated income
         responseData.financials.budgetLimit = finRes.rows[0].budget_limit;
     }
+
+    // 1b. Calculate Actual Income from Incomes Table
+    const incomeRes = await pool.query("SELECT SUM(amount) as total FROM incomes WHERE user_id = $1 AND date LIKE $2", [userId, `${currentMonth}%`]);
+    responseData.financials.income = incomeRes.rows[0].total || 0;
 
     // 2. Total Expenses
     const expRes = await pool.query('SELECT SUM(amount) as total FROM expenses WHERE user_id = $1', [userId]);

@@ -32,6 +32,7 @@
         <!-- Navigation Tabs -->
         <div class="tabs">
             <button class="tab-btn active" onclick="openTab('analysis')">Analysis</button>
+            <button class="tab-btn" onclick="openTab('incomes')">Add Income</button>
             <button class="tab-btn" onclick="openTab('expenses')">Add Expenses</button>
             <button class="tab-btn" onclick="openTab('loans')">Add Loan</button>
         </div>
@@ -89,6 +90,39 @@
             </div>
 
 
+
+            <!-- Add Income Tab -->
+            <div id="incomes" class="tab-pane">
+                <h2>Add New Income</h2>
+                <form id="incomeForm">
+                    <div class="input-group">
+                        <i class="fas fa-rupee-sign"></i>
+                        <input type="number" id="income-amount" placeholder="Amount (INR)" required />
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-briefcase"></i>
+                        <input type="text" id="income-source" placeholder="Source (e.g., Salary, Freelance)" required />
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-edit"></i>
+                        <input type="text" id="income-desc" placeholder="Description" />
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-calendar-alt"></i>
+                        <input type="date" id="income-date" required />
+                    </div>
+                    <button type="submit" class="btn-primary" id="income-submit-btn">Add Income</button>
+                    <button type="button" class="btn-ghost" id="income-cancel-btn" style="display: none;"
+                        onclick="cancelEdit('income')">Cancel</button>
+                </form>
+
+                <div class="list-section">
+                    <h3>Recent Incomes</h3>
+                    <div id="income-list" class="expense-list">
+                        <!-- Incomes will be populated here -->
+                    </div>
+                </div>
+            </div>
 
             <!-- Add Expenses Tab -->
             <div id="expenses" class="tab-pane">
@@ -164,11 +198,9 @@
     <div id="budget-modal" class="modal hidden">
         <div class="modal-content">
             <span class="close" onclick="toggleBudgetModal()">&times;</span>
-            <h2>Set Monthly Budget</h2>
-            <div class="input-group">
-                <i class="fas fa-wallet"></i>
-                <input type="number" id="set-income" placeholder="Monthly Income" />
-            </div>
+            <h2>Set Budget Limit</h2>
+            <p style="font-size: 0.9em; color: #ccc; margin-bottom: 15px;">Note: Monthly Income is now calculated
+                automatically from your added incomes.</p>
             <div class="input-group">
                 <i class="fas fa-piggy-bank"></i>
                 <input type="number" id="set-limit" placeholder="Budget Limit (Expenses)" />
