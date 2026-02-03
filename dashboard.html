@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Background Elements -->
+    <div class="background">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="dashboard-wrapper">
+        <header class="dashboard-header">
+            <h1>Hello <span id="username">User</span></h1>
+            <button class="btn-ghost" onclick="logout()">Logout</button>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab('analysis')">Analysis</button>
+            <button class="tab-btn" onclick="openTab('expenses')">Add Expenses</button>
+            <button class="tab-btn" onclick="openTab('loans')">Add Loan</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+
+            <!-- Analysis Tab -->
+            <div id="analysis" class="tab-pane active">
+                <div class="section-header">
+                    <h2>Financial Analysis</h2>
+                    <button class="btn-ghost small" onclick="toggleBudgetModal()">Set Budget</button>
+                </div>
+
+                <!-- Budget Overview -->
+                <div class="cards-container budget-cards">
+                    <div class="card budget-card">
+                        <h3>Monthly Income</h3>
+                        <p id="b-income">₹0</p>
+                    </div>
+                    <div class="card budget-card">
+                        <h3>Budget Limit</h3>
+                        <p id="b-limit">₹0</p>
+                    </div>
+                    <div class="card budget-card">
+                        <h3>Remaining Budget</h3>
+                        <p id="b-remaining">₹0</p>
+                    </div>
+                    <div class="card budget-card highlight">
+                        <h3>Spendable (Income - EMI - Spent)</h3>
+                        <p id="b-spendable">₹0</p>
+                    </div>
+                </div>
+
+                <h3>Loan Portfolio</h3>
+                <div id="loan-list" class="loan-list">
+                    <!-- JS will populate detailed loan cards here -->
+                </div>
+
+                <h3>Summary</h3>
+                <div class="cards-container">
+                    <div class="card">
+                        <h3>Total Expenses (Month)</h3>
+                        <p id="total-expenses">₹0</p>
+                    </div>
+                    <div class="card">
+                        <h3>Active Loans</h3>
+                        <p id="active-loans-count">0</p>
+                    </div>
+                    <div class="card">
+                        <h3>Total Monthly EMI</h3>
+                        <p id="total-emi">₹0</p>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- Add Expenses Tab -->
+            <div id="expenses" class="tab-pane">
+                <h2>Add New Expense</h2>
+                <form id="expenseForm">
+                    <div class="input-group">
+                        <i class="fas fa-rupee-sign"></i>
+                        <input type="number" id="expense-amount" placeholder="Amount (INR)" required />
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-tag"></i>
+                        <input type="text" id="expense-category" placeholder="Category (e.g., Food, Travel)" required />
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-edit"></i>
+                        <input type="text" id="expense-desc" placeholder="Description" />
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-calendar-alt"></i>
+                        <input type="date" id="expense-date" required />
+                    </div>
+                    <button type="submit" class="btn-primary" id="expense-submit-btn">Add Expense</button>
+                    <button type="button" class="btn-ghost" id="expense-cancel-btn" style="display: none;"
+                        onclick="cancelEdit('expense')">Cancel</button>
+                </form>
+
+                <div class="list-section">
+                    <h3>Recent Expenses</h3>
+                    <div id="expense-list" class="expense-list">
+                        <!-- Expenses will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Loan Tab -->
+            <div id="loans" class="tab-pane">
+                <h2>Add Loan Details</h2>
+                <form id="loanForm">
+                    <div class="input-group">
+                        <i class="fas fa-file-signature"></i>
+                        <input type="text" id="loan-name" placeholder="Loan Name (e.g., Car Loan)" required />
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-rupee-sign"></i>
+                        <input type="number" id="loan-amount" placeholder="Total Loan Amount" required />
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-percent"></i>
+                        <input type="number" id="loan-interest" placeholder="Interest Rate (%)" step="0.1" required />
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-calendar-check"></i>
+                        <input type="number" id="loan-tenure" placeholder="Tenure (Months)" required />
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-calendar-alt"></i>
+                        <input type="date" id="loan-date" required />
+                    </div>
+                    <button type="submit" class="btn-primary" id="loan-submit-btn">Calculate & Add Loan</button>
+                    <button type="button" class="btn-ghost" id="loan-cancel-btn" style="display: none;"
+                        onclick="cancelEdit('loan')">Cancel</button>
+                </form>
+                <div id="loan-result" class="result-box hidden">
+                    <p>Estimated EMI: <span id="display-emi">₹0</span></p>
+                    <p>Total Payable: <span id="display-payable">₹0</span></p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Budget Modal (Moved outside for fixed positioning) -->
+    <div id="budget-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" onclick="toggleBudgetModal()">&times;</span>
+            <h2>Set Monthly Budget</h2>
+            <div class="input-group">
+                <i class="fas fa-wallet"></i>
+                <input type="number" id="set-income" placeholder="Monthly Income" />
+            </div>
+            <div class="input-group">
+                <i class="fas fa-piggy-bank"></i>
+                <input type="number" id="set-limit" placeholder="Budget Limit (Expenses)" />
+            </div>
+            <button class="btn-primary" onclick="saveBudget()">Save</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script src="dashboard.js"></script>
+</body>
+
+</html>
