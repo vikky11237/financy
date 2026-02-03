@@ -367,7 +367,8 @@ app.get('/analysis/:userName', asyncHandler(async (req, res) => {
 
     // 4. Final
     responseData.financials.remainingBudget = responseData.financials.budgetLimit - totalExpenses;
-    responseData.financials.spendableIncome = responseData.financials.income - totalEmi - totalExpenses;
+    // New Logic: Spendable = Budget - EMI - Expenses (previously was Income - EMI - Expenses)
+    responseData.financials.spendableIncome = responseData.financials.budgetLimit - totalEmi - totalExpenses;
 
     res.json(responseData);
 }));
